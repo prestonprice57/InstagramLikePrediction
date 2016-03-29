@@ -29,20 +29,26 @@ f.close()
 np.random.seed(1024)
 indices = np.random.permutation(len(users))
 
-startIndex = 0
-endIndex = 10
-while endIndex < len(indices):  # CHANGE THIS
+startIndex = 420
+endIndex = 430
+while endIndex < len(indices): 
     jsonFile = {}
     with open('data.json') as infile:
         jsonFile = json.load(infile)
 
     for i in range(startIndex, endIndex):
         new_user = users[indices[i]]
-        print(new_user)
-        isPrivate = api.user_relationship(user_id=new_user).target_user_is_private
-        if isPrivate == False:
+        print new_user
 
-            url = 'https://api.instagram.com/v1/users/self?access_token=%s' % access_token
+
+        isPrivate = True
+        try: 
+            isPrivate = api.user_relationship(user_id=new_user).target_user_is_private
+        except:
+            print "This didn't work"
+
+        if isPrivate == False:
+            url = 'https://api.instagram.com/v1/users/%s/?access_token=%s' % (new_user, access_token)
             resp = requests.get(url=url)
             data = resp.json()
             follows = data['data']['counts']['follows']
@@ -51,8 +57,13 @@ while endIndex < len(indices):  # CHANGE THIS
             recent_media, next = api.user_recent_media(user_id=new_user, count=4)
             for media in recent_media:
                 image_url = media.get_standard_resolution_url()
+                faceNum = 0
+                try:
+                    faceNum = len(face.detection.detect(url=image_url)['face'])
+                except:
+                    pass
 
-                if media.type != 'video' and 1 <= len(face.detection.detect(url=image_url)['face']) <= 4:
+                if media.type != 'video' and 1 <= faceNum <= 4:
                     day = media.created_time.weekday()
                     hour = str(media.created_time.hour) + ':' + str(media.created_time.minute)
                     likes = media.like_count
@@ -79,8 +90,14 @@ while endIndex < len(indices):  # CHANGE THIS
                     new_post['followers'] = followers
                     new_post['hashtags'] = hashtags
                     new_post['captionSentiment'] = captionSentiment
-                    new_post['likeRatio'] = float(likes) / followers
-                    new_post['followerRatio'] = float(followers) / follows
+                    if followers > 0:
+                        new_post['likeRatio'] = float(likes) / followers
+                    else:
+                        new_post['likeRatio'] = float(likes)
+                    if follows > 0:
+                        new_post['followerRatio'] = float(followers) / follows
+                    else:
+                        new_post['followerRatio'] = float(followers)
                     jsonFile['data']['posts'].append(new_post)
 
     f5 = open('NumPosts.txt', 'a')
