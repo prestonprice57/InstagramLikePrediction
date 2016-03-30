@@ -53,8 +53,13 @@ while endIndex < len(indices):
             data = resp.json()
             follows = data['data']['counts']['follows']
             followers = data['data']['counts']['followed_by']
+            
+            recent_media = []
+            try:
+                recent_media, next = api.user_recent_media(user_id=new_user, count=4)
+            except:
+                pass
 
-            recent_media, next = api.user_recent_media(user_id=new_user, count=4)
             for media in recent_media:
                 image_url = media.get_standard_resolution_url()
                 faceNum = 0

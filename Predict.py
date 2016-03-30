@@ -4,6 +4,9 @@ from sklearn import svm
 from sklearn import linear_model
 from sklearn import neighbors
 import numpy as np
+from sklearn import ensemble
+import pandas as pd
+from pandas.io.json import json_normalize
 
 json_file = open('data.json')
 json_str = json_file.read()
@@ -17,6 +20,13 @@ print type(json_dict)
 target = []
 for d in json_dict['data']['posts']:
     target.append(d['likeRatio'])
+
+#
+#
+# Get summary of data for observation
+normalized = json_normalize(json_dict['data']['posts'])
+df = pd.DataFrame(normalized)
+print df.describe()
 
 
 #
@@ -40,7 +50,6 @@ for d in data:
         temp.append(val)
     x.append(temp)
 
-
 #
 #
 # Prepare the training and testing sets
@@ -49,17 +58,24 @@ x_test = x[int(len(x) * 0.9):]
 target_train = target[0:int(len(target) * 0.9)]
 target_test = target[int(len(target) * 0.9):]    
 
+np_x_train = np.array(x_train)
+np_x_test = np.array(x_test)
+np_target_train = np.array(target_train)
+np_target_test = np.array(target_test)    
 
-         
 
 #
 #
 # Which model do we want to test?
-support_vector_machine = True
+support_vector_machine = False
 kNN = False
 naive_bayes = False
 linear = False
 decisionTree = False
+bagging = True
+random_forest = False
+extra_random_forest = False
+ada_boost = False
 
 predict = []
 if kNN:
@@ -92,8 +108,22 @@ elif support_vector_machine:
 	sv = svm.SVR(kernel='rbf')
 	sv = sv.fit(x_train, target_train) 
 	predict = sv.predict(x_test)  
-
-
+elif bagging:
+	bag = ensemble.BaggingRegressor(neighbors.KNeighborsRegressor(n_neighbors=9, weights='uniform'), max_samples=1.0, max_features=0.7)
+	bag = bag.fit(x_train, target_train)
+	predict = bag.predict(x_test)
+elif random_forest:
+	forest = ensemble.RandomForestRegressor(n_estimators=20)
+	forest = forest.fit(x_train, target_train)
+	predict = forest.predict(x_test)
+elif extra_random_forest:
+	e_forest = ensemble.ExtraTreesRegressor(n_estimators=20)
+	e_forest = e_forest.fit(x_train, target_train)
+	predict = e_forest.predict(x_test)
+elif ada_boost:
+	ada = ensemble.AdaBoostRegressor(n_estimators=len(np_x_train)/4)
+	ada = ada.fit(np_x_train, np_target_train)
+	predict = ada.predict(np_x_test)
 
 #
 #
