@@ -35,7 +35,7 @@ def get_user_prediction(fit):
 	hour_float = 0.0
 	image_url = ''
 	new_post = []
-	count = 29
+	count = 4
 	recent_media, next = api.user_recent_media(user_id='self', count=count)
 	for i, media in enumerate(recent_media):
 		new_post = []
@@ -54,7 +54,7 @@ def get_user_prediction(fit):
 			fer = indicoio.fer(image_url)
 
 			new_hour, minute = hour.split(':')
-			hour_float = float(new_hour + minute)
+			hour_float = new_hour
 			
 			new_post.append(captionSentiment)
 			new_post.append(hour_float)
@@ -81,12 +81,14 @@ def get_user_prediction(fit):
 	print image_url
 	print day
 	print hour
-	predict = fit.predict(new_post)
-	prediction = predict[0]*followers
-	print "Predicted:", int(prediction)
-	print "Actual:", likes
-	print
-	print
+	for i in xrange(0,24):
+		new_post[1] = i
+		predict = fit.predict(new_post)
+		prediction = predict[0]*followers
+		print "Predicted:", int(prediction)
+		print "Actual:", likes
+		print
+		print
 
 def stack(x_train, target_train, x_test):
 
@@ -211,7 +213,7 @@ print df.describe()
 # Now remove the like ratios AND the likes (so that we can predict)
 for d in json_dict['data']['posts']:
     hour, minute = d['hour'].split(':')
-    d['hour'] = float(hour + minute)
+    d['hour'] = hour
     del d['likeRatio']
     del d['likes']
 data = json_dict['data']['posts']
@@ -246,7 +248,7 @@ np_target_test = np.array(target_test)
 #
 #
 # Which model do we want to test?
-support_vector_machine = True
+support_vector_machine = False
 kNN = False
 naive_bayes = False
 linear = False
@@ -322,13 +324,13 @@ if bagging:
 	getAccuracy(predict, target_test)
 	#get_user_prediction(bag)
 if random_forest:
-	forest = ensemble.RandomForestRegressor(n_estimators=1000)
+	forest = ensemble.RandomForestRegressor(n_estimators=200)
 	forest = forest.fit(x_train2, target_train2)
 	predict = forest.predict(x_test)
 
 	print "Random Forest"
 	getAccuracy(predict, target_test)
-	#get_user_prediction(forest)
+	get_user_prediction(forest)
 if extra_random_forest:
 	e_forest = ensemble.ExtraTreesRegressor(n_estimators=200)
 	e_forest = e_forest.fit(x_train2, target_train2)
